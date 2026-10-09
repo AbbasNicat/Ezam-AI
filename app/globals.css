@@ -40,6 +40,40 @@
   --radius-lg: var(--radius);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+
+  /* Figma landing tokens. Prefixed so they do not override the app shell palette. */
+  --color-af-canvas: #fafaf8;
+  --color-af-subtle: #f5f6f4;
+  --color-af-surface: #ffffff;
+  --color-af-line: #e8eae7;
+  --color-af-line-strong: #dcdfdb;
+  --color-af-ink: #151a1d;
+  --color-af-ink-2: #687078;
+  --color-af-ink-3: #949b9f;
+  --color-af-accent: #246b64;
+  --color-af-accent-hover: #1b554f;
+  --color-af-accent-soft: #eaf4f1;
+  --color-af-success: #22845d;
+  --color-af-success-soft: #e9f4ee;
+  --shadow-af-float: 0 1px 2px rgb(21 26 29 / 0.04), 0 8px 24px -8px rgb(21 26 29 / 0.1);
+  --shadow-af-lift: 0 1px 2px rgb(21 26 29 / 0.04), 0 16px 40px -16px rgb(21 26 29 / 0.16);
+}
+
+@keyframes af-flow {
+  to {
+    stroke-dashoffset: -16;
+  }
+}
+
+.animate-af-flow {
+  animation: af-flow 1.2s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-af-flow,
+  .af-caret {
+    animation: none !important;
+  }
 }
 
 body {

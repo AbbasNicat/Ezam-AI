@@ -38,7 +38,7 @@ export function PolicySettings() {
   }
 
   return (
-    <div className="min-h-screen lg:flex">
+    <div className="min-h-screen bg-af-canvas text-af-ink lg:flex">
       <WorkspaceNav profile={profile} />
       <main className="min-w-0 flex-1">
         <header className="border-b border-border bg-white px-5 py-5 sm:px-8">

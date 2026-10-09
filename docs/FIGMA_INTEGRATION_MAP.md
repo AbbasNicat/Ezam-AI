@@ -4,7 +4,7 @@ The Figma AI export is a Vite/React presentation layer with local screen switchi
 
 | Figma screen/component | AtlasFlow route | Real data/service | Integration status |
 | --- | --- | --- | --- |
-| Landing | `/` | Product disclosures and demo scenario | Existing content retained with the shared visual tokens |
+| Landing | `/` | Links into `/start`, `/demo`, and the business workspace. Hero package figures stay illustrative, matching the Figma landing mock. | Figma `Landing.tsx` layout ported. Sign-in opens the local workspace. Pricing has no checkout. |
 | Welcome and personal onboarding | `/start?mode=personal` | `workspace-profile.ts` local persistence | Connected |
 | Business signup and policy setup | `/start?mode=business`, `/business/policies` | `WorkspaceProfile`, `policyForWorkspace` | Connected; saved changes affect new plans |
 | Personal home/request/packages/itinerary | `/individual`, `/individual/plan`, `/individual/trips` | Request form, AI fallback/API, deterministic planner, itinerary, map, booking handoff | Connected |

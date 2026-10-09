@@ -25,7 +25,7 @@ export function PackageComparison({
         const cabin = String(pkg.flight.attributes.cabin ?? "").replaceAll("_", " ");
         const neighborhood = pkg.accommodation ? String(pkg.accommodation.attributes.neighborhood ?? "") : "No overnight stay";
         return (
-          <Card key={pkg.id} className={selected ? "border-primary shadow-md ring-2 ring-primary/30" : ""}>
+          <Card key={pkg.id} className={selected ? "rounded-[14px] border-af-accent bg-[#F4F9F7] shadow-af-float ring-[3px] ring-af-accent/10" : "rounded-[14px] border-af-line"}>
             <CardHeader>
               <div className="flex items-center justify-between gap-2">
                 <CardTitle>{TIER_LABEL[pkg.tier]}</CardTitle>

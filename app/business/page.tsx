@@ -1,3 +1,5 @@
-import { TripWorkspace } from "@/components/travel/trip-workspace";
+import { BusinessDashboard } from "@/components/travel/business-dashboard";
 
-export default function BusinessDashboardPage() { return <TripWorkspace />; }
+export default function BusinessDashboardPage() {
+  return <BusinessDashboard />;
+}

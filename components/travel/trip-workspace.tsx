@@ -256,14 +256,14 @@ export function TripWorkspace() {
   }
 
   return (
-    <div className="min-h-screen lg:flex">
+    <div className="min-h-screen bg-af-canvas text-af-ink lg:flex">
       <WorkspaceNav profile={workspaceProfile} />
       <div className="min-w-0 flex-1">
       <header className="sticky top-0 z-20 border-b border-border bg-card/90 backdrop-blur-xl">
         <div className="flex min-h-16 flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6">
           <div>
-            <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-primary">Travel operations</p>
-            <h1 className="text-base font-semibold tracking-tight">{workspaceProfile?.kind === "personal" ? "Plan your next trip" : "Trip planning workspace"}</h1>
+            <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-af-accent">Travel operations</p>
+            <h1 className="text-[22px] font-medium tracking-[-0.03em]">{pathname.endsWith("/plan") || pathname.endsWith("/requests") ? "Where are we taking you?" : pathname.endsWith("/trips") ? "Your trips" : pathname.endsWith("/approvals") ? "Approvals" : pathname.endsWith("/expenses") ? "Expenses" : "Trip planning workspace"}</h1>
           </div>
           <div className="flex flex-wrap gap-2">
             {workspaceProfile ? <Badge variant="secondary">{workspaceProfile.kind === "personal" ? "Individual" : workspaceProfile.companyName}</Badge> : null}
