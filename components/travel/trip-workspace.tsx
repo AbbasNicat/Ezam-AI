@@ -263,7 +263,7 @@ export function TripWorkspace() {
   const expensesView = pathname.endsWith("/expenses");
   const title = requestView ? "Where are we taking you?" : approvalsView ? "Approvals" : expensesView ? "Expenses & reports" : "Your travel plan";
   const subtitle = requestView
-    ? "Tell AtlasFlow about your trip. We’ll handle the planning."
+    ? "Tell EzamAI about your trip. We’ll handle the planning."
     : approvalsView
       ? "Review policy, cost, and the complete decision history."
       : expensesView
@@ -306,5 +306,5 @@ export function TripWorkspace() {
 }
 
 function EmptyPlan() {
-  return <Card className="rounded-[14px] border-line p-10 text-center shadow-none"><CardTitle>No travel plan yet</CardTitle><p className="mx-auto mt-2 max-w-lg text-[13px] text-ink-2">Create a request first. AtlasFlow will show only feasible packages and will return an actionable no-plan result instead of fabricating a compliant option.</p></Card>;
+  return <Card className="rounded-[14px] border-line p-10 text-center shadow-none"><CardTitle>No travel plan yet</CardTitle><p className="mx-auto mt-2 max-w-lg text-[13px] text-ink-2">Create a request first. EzamAI will show only feasible packages and will return an actionable no-plan result instead of fabricating a compliant option.</p></Card>;
 }

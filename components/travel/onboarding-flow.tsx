@@ -167,9 +167,9 @@ export function OnboardingFlow() {
     <div className={cn(inter.className, "min-h-screen bg-af-canvas text-af-ink")}>
       <header className="sticky top-0 z-30 border-b border-af-line/70 bg-af-canvas/85 backdrop-blur-md">
         <div className="mx-auto flex h-16 max-w-[1240px] items-center gap-4 px-5 md:px-8">
-          <Link href="/" className="flex items-center gap-2.5" aria-label="AtlasFlow home">
+          <Link href="/" className="flex items-center gap-2.5" aria-label="EzamAI home">
             <LogoMark />
-            <span className="hidden text-[16px] font-semibold tracking-[-0.02em] sm:inline">AtlasFlow</span>
+            <span className="hidden text-[16px] font-semibold tracking-[-0.02em] sm:inline">EzamAI</span>
           </Link>
           {step !== "choose" ? (
             <button
@@ -324,7 +324,7 @@ function Choose({
   return (
     <>
       <div className="mx-auto max-w-[640px] text-center">
-        <h1 className="text-[32px] font-medium leading-[1.1] tracking-[-0.035em] md:text-[44px]">How will you use AtlasFlow?</h1>
+        <h1 className="text-[32px] font-medium leading-[1.1] tracking-[-0.035em] md:text-[44px]">How will you use EzamAI?</h1>
         <p className="mt-3 text-[15.5px] text-af-ink-2">Your journey starts here. Choose the experience that fits you best.</p>
       </div>
       <div role="radiogroup" aria-label="Account type" className="mx-auto mt-10 grid max-w-[920px] gap-4 md:grid-cols-2">

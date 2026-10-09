@@ -52,7 +52,7 @@ export function WorkspaceNav({ profile }: { profile: WorkspaceProfile | null }) 
             <circle cx="7.5" cy="20.5" r="2" fill="#fff" />
             <circle cx="20.5" cy="7.5" r="2.6" fill="none" stroke="#fff" strokeWidth="1.6" />
           </svg>
-          AtlasFlow
+          EzamAI
         </Link>
         <span className="rounded-full bg-primary/10 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-primary">Demo</span>
       </div>
@@ -77,7 +77,7 @@ export function WorkspaceNav({ profile }: { profile: WorkspaceProfile | null }) 
         </nav>
       </div>
       <div className="hidden px-5 pt-5 text-[11px] leading-relaxed text-muted-foreground lg:block">
-        Synthetic estimates · no booking or payment is completed in AtlasFlow.
+        Synthetic estimates · no booking or payment is completed in EzamAI.
       </div>
     </aside>
   );

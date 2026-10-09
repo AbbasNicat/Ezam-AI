@@ -14,9 +14,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "AtlasFlow AI",
+  title: "EzamAI AI",
   description:
-    "AtlasFlow transforms employee travel requests into policy-compliant itineraries, optimized budgets, booking handoffs, and finance-ready reports.",
+    "EzamAI transforms employee travel requests into policy-compliant itineraries, optimized budgets, booking handoffs, and finance-ready reports.",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

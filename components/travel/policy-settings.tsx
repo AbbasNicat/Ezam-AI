@@ -44,7 +44,7 @@ export function PolicySettings() {
         <header className="border-b border-border bg-white px-5 py-5 sm:px-8">
           <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-primary">Company settings</p>
           <h1 className="mt-1 text-2xl font-semibold tracking-[-0.03em]">Travel policy</h1>
-          <p className="mt-1 text-sm text-muted-foreground">These rules are persisted in this browser and passed directly into the AtlasFlow planner.</p>
+          <p className="mt-1 text-sm text-muted-foreground">These rules are persisted in this browser and passed directly into the EzamAI planner.</p>
         </header>
         <div className="mx-auto grid max-w-5xl gap-5 p-5 sm:p-8 lg:grid-cols-[minmax(0,1fr)_300px]">
           <Card>

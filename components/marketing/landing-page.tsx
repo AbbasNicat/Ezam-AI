@@ -153,9 +153,9 @@ export function LandingPage() {
     <div className={cn(inter.className, "min-h-screen bg-af-canvas text-af-ink antialiased")}>
       <header className="sticky top-0 z-30 border-b border-af-line/70 bg-af-canvas/80 backdrop-blur-md">
         <div className="mx-auto flex h-16 max-w-[1240px] items-center px-5 md:px-8">
-          <Link href="/" className="flex items-center gap-2.5" aria-label="AtlasFlow home">
+          <Link href="/" className="flex items-center gap-2.5" aria-label="EzamAI home">
             <LogoMark />
-            <span className="text-[16px] font-semibold tracking-[-0.02em] text-af-ink">AtlasFlow</span>
+            <span className="text-[16px] font-semibold tracking-[-0.02em] text-af-ink">EzamAI</span>
           </Link>
           <nav className="ml-12 hidden items-center gap-7 text-[13.5px] text-af-ink-2 md:flex">
             {[
@@ -204,7 +204,7 @@ export function LandingPage() {
               <span className="text-af-ink-3">beautifully</span> <span className="text-af-accent">orchestrated.</span>
             </h1>
             <p className="mt-6 max-w-[600px] text-[16.5px] leading-[1.6] text-af-ink-2 md:text-[17.5px]">
-              From the first travel request to final approval, AtlasFlow brings flights, stays, budgets, policies, and
+              From the first travel request to final approval, EzamAI brings flights, stays, budgets, policies, and
               itineraries into one intelligent workflow.
             </p>
             <div className="mt-9 flex flex-wrap items-center gap-3">
@@ -255,7 +255,7 @@ export function LandingPage() {
             </h2>
           </div>
           <p className="text-[15.5px] leading-relaxed text-af-ink-2 md:col-span-5">
-            AtlasFlow reads your request the way a seasoned travel manager would — then checks it against policy,
+            EzamAI reads your request the way a seasoned travel manager would — then checks it against policy,
             budget, and your calendar before anyone has to ask.
           </p>
         </div>
@@ -263,7 +263,7 @@ export function LandingPage() {
           <StepCard
             n="01"
             title="Describe your trip"
-            body="Write it the way you'd tell a colleague. AtlasFlow extracts dates, budget, and preferences."
+            body="Write it the way you'd tell a colleague. EzamAI extracts dates, budget, and preferences."
           >
             <div className="rounded-[10px] border border-af-line bg-af-surface p-3 text-[12.5px] leading-relaxed text-af-ink-2">
               “Istanbul, Oct 13–16. Client meeting Tuesday morning. Quiet hotel near the center
@@ -446,7 +446,7 @@ export function LandingPage() {
               Plan a complete business trip — policy checks, budget, and approval — in the time it takes to write an email.
             </p>
             <LandingLink href="/start?mode=business" size="lg" className="mt-9 bg-white !text-af-ink hover:bg-[#EEF1EE]">
-              Launch AtlasFlow <ArrowRight className="size-4" />
+              Launch EzamAI <ArrowRight className="size-4" />
             </LandingLink>
           </div>
         </div>
@@ -457,7 +457,7 @@ export function LandingPage() {
           <div>
             <div className="flex items-center gap-2.5">
               <LogoMark className="size-6" />
-              <span className="text-[15px] font-semibold tracking-[-0.02em]">AtlasFlow</span>
+              <span className="text-[15px] font-semibold tracking-[-0.02em]">EzamAI</span>
             </div>
             <p className="mt-3 text-[13px] text-af-ink-3">Business travel, intelligently orchestrated.</p>
           </div>
@@ -501,7 +501,7 @@ export function LandingPage() {
           </div>
         </div>
         <div className="mx-auto flex max-w-[1240px] justify-between border-t border-af-line px-5 py-5 text-[12px] text-af-ink-3 md:px-8">
-          <span>© 2026 AtlasFlow. Demo product.</span>
+          <span>© 2026 EzamAI. Demo product.</span>
           <span>Prices shown are illustrative estimates.</span>
         </div>
       </footer>
@@ -675,7 +675,7 @@ function HeroMockup() {
             <span className="size-2.5 rounded-full bg-[#E3E5E2]" />
             <span className="size-2.5 rounded-full bg-[#E3E5E2]" />
             <span className="mx-auto rounded-[6px] bg-af-subtle px-3 py-0.5 text-[11px] text-af-ink-3">
-              app.atlasflow.ai/trips/istanbul
+              ezamai.vercel.app
             </span>
           </div>
           <div className="flex">
