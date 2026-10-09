@@ -21,6 +21,7 @@ import { requestFromForm } from "@/lib/data/request-form";
 import { interpretTravelText } from "@/lib/ai/fallback";
 import { planTrip, selectedOrFirst } from "@/lib/planning/planner";
 import { clearDemo, loadDemo, saveDemo } from "@/lib/storage/local-store";
+import { loadWorkspaceProfile, policyForWorkspace, type WorkspaceProfile } from "@/lib/storage/workspace-profile";
 import {
   createTripRecord,
   decideApproval,
@@ -75,14 +76,39 @@ export function TripWorkspace() {
   const [notes, setNotes] = useState<string[]>([]);
   const [mode, setMode] = useState<"basic" | "ai">("basic");
   const [planning, setPlanning] = useState(false);
+  const [workspaceProfile, setWorkspaceProfile] = useState<WorkspaceProfile | null>(null);
 
   useEffect(() => {
+    const profile = loadWorkspaceProfile();
+    setWorkspaceProfile(profile);
     const saved = loadDemo();
     if (saved) {
       setRole(saved.role);
       setDraft(saved.draft);
       setRecord(saved.record);
       setNotes(saved.interpretationNotes);
+    } else if (profile?.kind === "personal") {
+      setDraft({
+        ...emptyFormValues,
+        employeeName: profile.fullName,
+        companyName: "Personal workspace",
+        origin: profile.homeCity,
+        corporateBudget: profile.travelBudget,
+        currency: profile.currency,
+        purpose: "Personal trip",
+        accommodationPreference: profile.accommodationPreference,
+        accommodationLevel: profile.travelStyle === "value" ? "budget" : profile.travelStyle === "comfort" ? "premium" : "standard",
+        leisureEnabled: true,
+        personalLeisureBudget: Math.round(profile.travelBudget * 0.2),
+        interests: profile.interests,
+      });
+    } else if (profile?.kind === "business") {
+      setDraft({
+        ...emptyFormValues,
+        companyName: profile.companyName,
+        currency: profile.currency,
+        corporateBudget: Math.min(1800, profile.tripBudgetLimit),
+      });
     }
     setReady(true);
   }, []);
@@ -199,6 +225,7 @@ export function TripWorkspace() {
       const request = requestFromForm(values);
       const plan = planTrip({
         request,
+        policy: workspaceProfile ? policyForWorkspace(workspaceProfile) : undefined,
         mode,
         interpretationNotes: notes.length > 0 ? notes : undefined,
       });
@@ -220,14 +247,19 @@ export function TripWorkspace() {
         <div className="mx-auto flex max-w-[1440px] flex-wrap items-center justify-between gap-3 px-4 py-3">
           <div>
             <Link href="/" className="text-sm font-semibold text-primary">AtlasFlow AI</Link>
-            <p className="text-xs text-muted-foreground">Demo simulation — not production authentication</p>
+            <p className="text-xs text-muted-foreground">{workspaceProfile?.kind === "personal" ? "Personal planning workspace" : "Business demo simulation — not production authentication"}</p>
           </div>
           <div className="flex flex-wrap gap-2">
+            {workspaceProfile ? <Badge variant="secondary">{workspaceProfile.kind === "personal" ? "Individual" : workspaceProfile.companyName}</Badge> : null}
+            {workspaceProfile?.kind !== "personal" ? (
+              <>
             {ROLES.map((item) => (
               <Button key={item} type="button" size="sm" variant={role === item ? "default" : "outline"} onClick={() => setRole(item)}>
                 {roleLabel(item)}
               </Button>
             ))}
+              </>
+            ) : null}
           </div>
         </div>
       </header>
@@ -247,6 +279,7 @@ export function TripWorkspace() {
                   onInterpret={interpret}
                   onLoadDemo={loadScenario}
                   onReset={resetDemo}
+                  workspaceKind={workspaceProfile?.kind ?? "business"}
                 />
               ) : (
                 <p className="text-sm text-muted-foreground">Restoring the saved demo…</p>
@@ -283,7 +316,9 @@ export function TripWorkspace() {
                 <CardTitle>No plan yet</CardTitle>
               </CardHeader>
               <CardContent className="text-sm text-muted-foreground">
-                Load the Caspian Ventures scenario and choose Generate Travel Plans. If nothing fits policy, AtlasFlow returns NO_FEASIBLE_PLAN and a fix instead of a fake compliant package.
+                {workspaceProfile?.kind === "personal"
+                  ? "Review your saved preferences or load the Istanbul scenario, then generate three travel packages. AtlasFlow reports when no feasible plan fits the budget."
+                  : "Load the Caspian Ventures scenario and choose Generate Travel Plans. If nothing fits policy, AtlasFlow returns NO_FEASIBLE_PLAN and a fix instead of a fake compliant package."}
               </CardContent>
             </Card>
           ) : null}
@@ -309,7 +344,7 @@ export function TripWorkspace() {
         </main>
         <aside className="space-y-3">
           <BudgetBreakdown pkg={selected} budget={record?.request.corporateBudget ?? draft.corporateBudget} />
-          <PolicyResults plan={record?.plan ?? null} pkg={selected} />
+          {workspaceProfile?.kind !== "personal" ? <PolicyResults plan={record?.plan ?? null} pkg={selected} /> : null}
           {record ? (
             <BookingHandoff
               record={record}
@@ -318,14 +353,18 @@ export function TripWorkspace() {
               onStatus={(target, status) => update(setHandoffStatus(record, target, status, roleLabel(role), nowStamp()))}
             />
           ) : null}
-          <ApprovalPanel
-            record={record}
-            role={role}
-            onSubmit={() => record && update(submitForApproval(record, roleLabel(role), nowStamp()))}
-            onDecide={(status, comment) => record && update(decideApproval(record, status, comment, roleLabel(role), nowStamp()))}
-          />
-          <FinanceReport record={record} />
-          <AuditTimeline events={record?.audit ?? []} />
+          {workspaceProfile?.kind !== "personal" ? (
+            <>
+              <ApprovalPanel
+                record={record}
+                role={role}
+                onSubmit={() => record && update(submitForApproval(record, roleLabel(role), nowStamp()))}
+                onDecide={(status, comment) => record && update(decideApproval(record, status, comment, roleLabel(role), nowStamp()))}
+              />
+              <FinanceReport record={record} />
+              <AuditTimeline events={record?.audit ?? []} />
+            </>
+          ) : null}
         </aside>
       </div>
     </div>

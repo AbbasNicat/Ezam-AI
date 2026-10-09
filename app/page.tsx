@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, MapPinned, Scale, ShieldCheck } from "lucide-react";
+import { ArrowRight, Building2, MapPinned, Scale, ShieldCheck, UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const steps = [
@@ -38,7 +38,7 @@ export default function HomePage() {
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Button asChild size="lg">
-                <Link href="/demo">Launch Interactive Demo</Link>
+                <Link href="/start">Choose your workspace</Link>
               </Button>
               <Button asChild size="lg" variant="outline">
                 <a href="#workflow">See the workflow</a>
@@ -63,6 +63,21 @@ export default function HomePage() {
               ))}
             </div>
           </div>
+        </section>
+
+        <section className="grid gap-4 py-6 md:grid-cols-2">
+          <article className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+            <UserRound className="h-6 w-6 text-primary" />
+            <h2 className="mt-4 text-xl font-semibold">For individual travelers</h2>
+            <p className="mt-2 text-sm text-muted-foreground">Create a browser-local preference profile, set a personal budget, compare three packages, and continue to external booking search.</p>
+            <Button asChild className="mt-5" variant="outline"><Link href="/start?mode=personal">Start personal planning <ArrowRight className="h-4 w-4" /></Link></Button>
+          </article>
+          <article className="rounded-2xl border border-primary/30 bg-accent/40 p-6 shadow-sm">
+            <Building2 className="h-6 w-6 text-primary" />
+            <h2 className="mt-4 text-xl font-semibold">For businesses</h2>
+            <p className="mt-2 text-sm text-muted-foreground">Configure practical policy limits, plan employee travel, route approval, preserve an audit trail, and export finance-ready CSV.</p>
+            <Button asChild className="mt-5"><Link href="/start?mode=business">Set up business workspace <ArrowRight className="h-4 w-4" /></Link></Button>
+          </article>
         </section>
 
         <section id="workflow" className="grid gap-4 py-6 md:grid-cols-3">

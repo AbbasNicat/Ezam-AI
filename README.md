@@ -4,6 +4,8 @@ Corporate travel planning demo for the NeuroBridge Hackathon. An employee reques
 
 Prices are demo estimates. The app does not sell tickets or confirm bookings.
 
+Live demo: [https://ezamai.vercel.app](https://ezamai.vercel.app)
+
 ## Run locally
 
 ```bash
@@ -27,7 +29,7 @@ npm start
 
 ## Deploy on Vercel
 
-This environment had no Vercel token, so a public URL was not created.
+The production project is deployed at [https://ezamai.vercel.app](https://ezamai.vercel.app).
 
 1. Push this branch to GitHub.
 2. Import the repository at [https://vercel.com/new](https://vercel.com/new).

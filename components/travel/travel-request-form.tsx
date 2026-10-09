@@ -20,6 +20,7 @@ export function TravelRequestForm({
   onInterpret,
   onLoadDemo,
   onReset,
+  workspaceKind = "business",
 }: {
   values: RequestFormValues;
   planning: boolean;
@@ -27,6 +28,7 @@ export function TravelRequestForm({
   onInterpret: (values: RequestFormValues) => void;
   onLoadDemo: () => void;
   onReset: () => void;
+  workspaceKind?: "personal" | "business";
 }) {
   const form = useForm<RequestFormValues>({
     resolver: zodResolver(requestFormSchema),
@@ -39,17 +41,17 @@ export function TravelRequestForm({
     <form className="space-y-4" onSubmit={form.handleSubmit(onSubmit)}>
       <div className="flex flex-wrap gap-2">
         <Button type="button" variant="secondary" onClick={onLoadDemo}>
-          Load Caspian Ventures demo
+          {workspaceKind === "personal" ? "Load Istanbul demo" : "Load Caspian Ventures demo"}
         </Button>
         <Button type="button" variant="ghost" onClick={onReset}>
           Reset demo
         </Button>
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
-        <Field label="Employee" error={form.formState.errors.employeeName?.message}>
+        <Field label={workspaceKind === "personal" ? "Traveler" : "Employee"} error={form.formState.errors.employeeName?.message}>
           <Input {...form.register("employeeName")} placeholder="Aylin M." />
         </Field>
-        <Field label="Company" error={form.formState.errors.companyName?.message}>
+        <Field label={workspaceKind === "personal" ? "Workspace" : "Company"} error={form.formState.errors.companyName?.message}>
           <Input {...form.register("companyName")} />
         </Field>
         <Field label="Origin" error={form.formState.errors.origin?.message}>
@@ -74,7 +76,7 @@ export function TravelRequestForm({
             ))}
           </select>
         </Field>
-        <Field label="Corporate budget" error={form.formState.errors.corporateBudget?.message}>
+        <Field label={workspaceKind === "personal" ? "Travel budget" : "Corporate budget"} error={form.formState.errors.corporateBudget?.message}>
           <Input type="number" min={0} step="1" {...form.register("corporateBudget", { valueAsNumber: true })} />
         </Field>
         <Field label="Personal leisure budget">
