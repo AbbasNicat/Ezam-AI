@@ -16,9 +16,8 @@ Updated: 9 October 2026, Asia/Baku
 
 ## Remaining
 
-- Commit and push the onboarding milestone.
-- Redeploy the updated commit and verify `/`, `/start`, and `/demo` in production.
 - Record a final two-minute demo video and submit the hackathon form.
+- Optionally capture production screenshots for the pitch deck.
 
 ## Current errors
 
@@ -47,14 +46,15 @@ Updated: 9 October 2026, Asia/Baku
 
 - Repository: <https://github.com/AbbasNicat/Ezam-AI>
 - Branch: `main`
-- Remote was synchronized before this milestone; current onboarding changes are not yet committed.
+- Onboarding milestone commit: `d6a378306b9c26921308c1ae64e9420ca226c9fe`.
+- Local and remote `main` matched after the push.
 
 ## Vercel status
 
 - Production URL: <https://ezamai.vercel.app>
-- Homepage and `/demo` returned AtlasFlow content anonymously before this milestone.
-- The onboarding milestone still needs redeployment.
+- Deployment `dpl_Dkosso4fd77zPs2KMBJU6bhf35L8` reached `READY` and was aliased to the production URL.
+- `/`, `/demo`, personal onboarding, and business onboarding were verified publicly after deployment.
 
 ## Exact next action
 
-Commit and push the verified onboarding milestone, then redeploy and verify all production routes.
+Record the two-minute demo using `docs/HACKATHON_SUBMISSION.md`, then submit the verified GitHub and production URLs.
