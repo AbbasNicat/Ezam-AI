@@ -8,3 +8,15 @@ const messages = {
 export type MessageKey = keyof typeof messages.en;
 export function t(language: AgentLanguage, key: MessageKey): string { return messages[language][key]; }
 export const agentMessages = messages;
+
+export const agentUiMessages = {
+  en: { interpret: "Interpret request", generate: "Generate travel plans", planning: "Planning…", regenerate: "Find another hotel", regenerating: "Finding another hotel…", extracted: "AI travel brief", clarifications: "Details needed", warnings: "Important limitations", simulated: "Demo catalog step", packagesReady: "Travel packages are ready.", selected: "Selected", select: "Select package", noAlternatives: "No unused hotel matches these constraints." },
+  az: { interpret: "İstəyi təhlil et", generate: "Səyahət planlarını hazırla", planning: "Plan hazırlanır…", regenerate: "Başqa otel tap", regenerating: "Başqa otel axtarılır…", extracted: "AI səyahət xülasəsi", clarifications: "Əlavə məlumat lazımdır", warnings: "Vacib məhdudiyyətlər", simulated: "Demo kataloq mərhələsi", packagesReady: "Səyahət paketləri hazırdır.", selected: "Seçilib", select: "Paketi seç", noAlternatives: "Bu şərtlərə uyğun istifadə olunmamış otel yoxdur." },
+  tr: { interpret: "İsteği yorumla", generate: "Seyahat planlarını hazırla", planning: "Plan hazırlanıyor…", regenerate: "Başka otel bul", regenerating: "Başka otel aranıyor…", extracted: "AI seyahat özeti", clarifications: "Ek bilgi gerekli", warnings: "Önemli sınırlamalar", simulated: "Demo katalog aşaması", packagesReady: "Seyahat paketleri hazır.", selected: "Seçildi", select: "Paketi seç", noAlternatives: "Bu koşullara uyan kullanılmamış otel yok." },
+} as const;
+
+export const progressMessages = {
+  en: { understand: "Understanding your request", flights: "Evaluating demo flight options", stays: "Finding suitable demo hotels", restaurants: "Matching restaurant preferences", attractions: "Exploring catalog attractions", itinerary: "Building the itinerary", policy: "Checking corporate travel policy", approval: "Checking approval requirements", budget: "Optimizing the budget", packages: "Preparing packages" },
+  az: { understand: "İstəyiniz təhlil olunur", flights: "Demo uçuş seçimləri qiymətləndirilir", stays: "Uyğun demo otellər tapılır", restaurants: "Restoran seçimləri uyğunlaşdırılır", attractions: "Kataloqdakı görməli yerlər araşdırılır", itinerary: "Marşrut hazırlanır", policy: "Korporativ səyahət qaydaları yoxlanılır", approval: "Təsdiq tələbləri yoxlanılır", budget: "Büdcə optimallaşdırılır", packages: "Paketlər hazırlanır" },
+  tr: { understand: "İsteğiniz anlaşılıyor", flights: "Demo uçuş seçenekleri değerlendiriliyor", stays: "Uygun demo oteller bulunuyor", restaurants: "Restoran tercihleri eşleştiriliyor", attractions: "Katalogdaki gezilecek yerler inceleniyor", itinerary: "Seyahat programı hazırlanıyor", policy: "Kurumsal seyahat politikası kontrol ediliyor", approval: "Onay gereksinimleri kontrol ediliyor", budget: "Bütçe optimize ediliyor", packages: "Paketler hazırlanıyor" },
+} as const;

@@ -9,6 +9,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { demoFormValues, emptyFormValues, type RequestFormValues } from "@/lib/data/demo-scenario";
 import { INTEREST_OPTIONS, requestFormSchema } from "@/lib/data/request-form";
+import { agentUiMessages } from "@/lib/agent/i18n";
+import type { AgentLanguage } from "@/lib/agent/schemas";
 
 const selectClass =
   "flex h-10 w-full rounded-md border border-input bg-card px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring";
@@ -21,6 +23,8 @@ export function TravelRequestForm({
   onLoadDemo,
   onReset,
   workspaceKind = "business",
+  language,
+  onLanguageChange,
 }: {
   values: RequestFormValues;
   planning: boolean;
@@ -29,6 +33,8 @@ export function TravelRequestForm({
   onLoadDemo: () => void;
   onReset: () => void;
   workspaceKind?: "personal" | "business";
+  language: AgentLanguage;
+  onLanguageChange: (language: AgentLanguage) => void;
 }) {
   const form = useForm<RequestFormValues>({
     resolver: zodResolver(requestFormSchema),
@@ -36,6 +42,7 @@ export function TravelRequestForm({
     values,
   });
   const interests = form.watch("interests");
+  const ui = agentUiMessages[language];
 
   return (
     <form className="space-y-4" onSubmit={form.handleSubmit(onSubmit)}>
@@ -46,6 +53,12 @@ export function TravelRequestForm({
         <Button type="button" variant="ghost" onClick={onReset}>
           Reset demo
         </Button>
+        <label className="ml-auto flex items-center gap-2 text-xs text-muted-foreground">
+          Language
+          <select aria-label="Preferred language" className="h-9 rounded-md border border-input bg-card px-2 text-xs text-foreground" value={language} onChange={(event) => onLanguageChange(event.target.value as AgentLanguage)}>
+            <option value="az">AZ</option><option value="tr">TR</option><option value="en">EN</option>
+          </select>
+        </label>
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
         <Field label={workspaceKind === "personal" ? "Traveler" : "Employee"} error={form.formState.errors.employeeName?.message}>
@@ -155,10 +168,10 @@ export function TravelRequestForm({
       </Field>
       <div className="flex flex-wrap gap-2">
         <Button type="button" variant="outline" onClick={() => onInterpret(form.getValues())}>
-          Interpret request
+          {ui.interpret}
         </Button>
         <Button type="submit" disabled={planning}>
-          {planning ? "Planning…" : "Generate Travel Plans"}
+          {planning ? ui.planning : ui.generate}
         </Button>
         <Button
           type="button"

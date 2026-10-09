@@ -2,7 +2,6 @@ import { t } from "@/lib/agent/i18n";
 import type { AgentInterpretation, AgentLanguage, RegenerationIntent, TravelIntent } from "@/lib/agent/schemas";
 import type { TravelRequest } from "@/types/travel";
 
-const CITIES: Array<[RegExp, string]> = [[/\b(bakı|baki|bakü|baku)\b/i, "Baku"], [/\bistanbul\b/i, "Istanbul"], [/\b(tbilisi|tiflis)\b/i, "Tbilisi"], [/\bdubai\b/i, "Dubai"]];
 const SUPPORTED = new Set(["Istanbul", "Tbilisi", "Dubai"]);
 
 export function detectLanguage(text: string, preferred?: AgentLanguage): { language: AgentLanguage; confidence: number } {
@@ -15,7 +14,11 @@ export function detectLanguage(text: string, preferred?: AgentLanguage): { langu
   return { language: "en", confidence: .65 };
 }
 
-function cityMentions(text: string): string[] { return CITIES.filter(([re]) => re.test(text)).map(([, city]) => city); }
+function cityMentions(text: string): string[] {
+  const normalized = text.toLocaleLowerCase("tr").replaceAll("ı", "i").replaceAll("ə", "e").replaceAll("ü", "u");
+  const aliases: Array<[string[], string]> = [[["baki", "baku"], "Baku"], [["istanbul"], "Istanbul"], [["tbilisi", "tiflis"], "Tbilisi"], [["dubai"], "Dubai"]];
+  return aliases.map(([names, city]) => ({ city, index: Math.min(...names.map((name) => { const index = normalized.indexOf(name); return index < 0 ? Number.POSITIVE_INFINITY : index; })) })).filter((item) => Number.isFinite(item.index)).sort((a, b) => a.index - b.index).map((item) => item.city);
+}
 function numberBefore(text: string, word: RegExp): number | undefined { const m = text.match(new RegExp(`(\\d+)\\s*(?:${word.source})`, "i")); return m ? Number(m[1]) : undefined; }
 
 export function fallbackIntent(message: string, preferredLanguage?: AgentLanguage): TravelIntent {

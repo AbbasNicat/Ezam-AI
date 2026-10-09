@@ -13,16 +13,22 @@ import { PackageComparison } from "@/components/travel/package-comparison";
 import { PolicyResults } from "@/components/travel/policy-results";
 import { TravelMap, type MapMarker } from "@/components/travel/travel-map";
 import { TravelRequestForm } from "@/components/travel/travel-request-form";
+import { AgentPanel } from "@/components/travel/agent-panel";
 import { WorkspaceNav } from "@/components/travel/workspace-nav";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { demoFormValues, emptyFormValues, type RequestFormValues } from "@/lib/data/demo-scenario";
+import { demoCatalog } from "@/lib/data/catalog";
 import { requestFromForm } from "@/lib/data/request-form";
 import { interpretTravelText } from "@/lib/ai/fallback";
 import { planTrip, selectedOrFirst } from "@/lib/planning/planner";
 import { clearDemo, loadDemo, saveDemo } from "@/lib/storage/local-store";
 import { loadWorkspaceProfile, policyForWorkspace, type WorkspaceProfile } from "@/lib/storage/workspace-profile";
+import { clearAgentState, loadAgentState, saveAgentState } from "@/lib/storage/agent-state";
+import { agentUiMessages } from "@/lib/agent/i18n";
+import type { AgentInterpretation, AgentLanguage, RegenerationResult } from "@/lib/agent/schemas";
+import type { AgentProgressEvent } from "@/lib/agent/progress";
 import {
   createTripRecord,
   decideApproval,
@@ -79,9 +85,17 @@ export function TripWorkspace() {
   const [mode, setMode] = useState<"basic" | "ai">("basic");
   const [planning, setPlanning] = useState(false);
   const [workspaceProfile, setWorkspaceProfile] = useState<WorkspaceProfile | null>(null);
+  const [language, setLanguage] = useState<AgentLanguage>("en");
+  const [agentResult, setAgentResult] = useState<AgentInterpretation | null>(null);
+  const [progress, setProgress] = useState<AgentProgressEvent[]>([]);
+  const [excludedOptionIds, setExcludedOptionIds] = useState<string[]>([]);
+  const [regenerating, setRegenerating] = useState(false);
 
   useEffect(() => {
     const profile = loadWorkspaceProfile();
+    const agentState = loadAgentState();
+    setLanguage(agentState.language);
+    setExcludedOptionIds(agentState.excludedOptionIds);
     setWorkspaceProfile(profile);
     const saved = loadDemo();
     if (saved) {
@@ -122,6 +136,11 @@ export function TripWorkspace() {
 
   useEffect(() => {
     if (!ready) return;
+    saveAgentState({ language, excludedOptionIds });
+  }, [ready, language, excludedOptionIds]);
+
+  useEffect(() => {
+    if (!ready) return;
     const section = pathname.endsWith("/approvals") || pathname.endsWith("/expenses") || pathname.endsWith("/policies")
       ? "operations"
       : pathname.endsWith("/requests") || pathname.endsWith("/plan")
@@ -141,6 +160,10 @@ export function TripWorkspace() {
       "Demo scenario loaded for Caspian Ventures. Review the form, then generate travel plans.",
     ]);
     setMode("basic");
+    setAgentResult(null);
+    setProgress([]);
+    setExcludedOptionIds([]);
+    clearAgentState();
     toast.success("Caspian Ventures demo loaded");
   }
 
@@ -151,104 +174,84 @@ export function TripWorkspace() {
     setNotes([]);
     setRole("employee");
     setMode("basic");
+    setAgentResult(null);
+    setProgress([]);
+    setExcludedOptionIds([]);
+    clearAgentState();
     toast("Demo reset");
   }
 
-  async function interpret(values: RequestFormValues) {
+  async function interpret(values: RequestFormValues): Promise<{ values: RequestFormValues; result: AgentInterpretation | null; stages: AgentProgressEvent[] }> {
     setDraft(values);
+    if (!values.freeText.trim()) return { values, result: null, stages: [] };
     try {
-      const response = await fetch("/api/ai/parse", {
+      const response = await fetch("/api/agent/interpret", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: values.freeText, context: values }),
+        body: JSON.stringify({ message: values.freeText, preferredLanguage: language, savedPreferences: values, companyPolicy: workspaceProfile?.kind === "business" ? policyForWorkspace(workspaceProfile) : undefined }),
       });
       if (!response.ok) throw new Error("parse failed");
-      const body = (await response.json()) as {
-        mode: "basic" | "ai";
-        parsed: {
-          origin?: string;
-          destination?: string;
-          corporateBudget?: number;
-          currency?: RequestFormValues["currency"];
-          purpose?: string;
-          cabinPreference?: RequestFormValues["cabinPreference"];
-          accommodationPreference?: RequestFormValues["accommodationPreference"];
-          interests?: string[];
-          quietStay?: boolean;
-          leisureEnabled?: boolean;
-          missingInformation?: string[];
-          notes?: string[];
-        };
-      };
-      applyInterpretation(values, body.parsed, body.mode, body.parsed.notes ?? [], body.parsed.missingInformation ?? []);
+      const body = (await response.json()) as AgentInterpretation & { progress: AgentProgressEvent[] };
+      const parsed = body.plannerInput;
+      const next: RequestFormValues = { ...values, origin: parsed.origin || values.origin, destination: parsed.destination || values.destination, departureDate: parsed.departureDate || values.departureDate, returnDate: parsed.returnDate || values.returnDate, travelerCount: parsed.travelerCount ?? values.travelerCount, corporateBudget: parsed.corporateBudget ?? values.corporateBudget, currency: parsed.currency ?? values.currency, purpose: parsed.purpose || values.purpose, cabinPreference: parsed.cabinPreference ?? values.cabinPreference, accommodationPreference: parsed.accommodationPreference ?? values.accommodationPreference, accommodationLevel: parsed.accommodationLevel ?? values.accommodationLevel, interests: parsed.interests?.length ? parsed.interests : values.interests, leisureEnabled: parsed.leisureEnabled ?? values.leisureEnabled, specialRequirements: parsed.specialRequirements ? [values.specialRequirements, parsed.specialRequirements].filter(Boolean).join(". ") : values.specialRequirements };
+      setDraft(next); setAgentResult(body); setProgress(body.progress); setMode(body.source === "openai" ? "ai" : "basic");
+      setNotes([...new Set([body.response, ...body.clarificationQuestions, ...body.warnings])]);
+      toast.success(body.response);
+      return { values: next, result: body, stages: body.progress };
     } catch {
       const local = interpretTravelText({ text: values.freeText, context: requestFromForm(values) });
-      applyInterpretation(values, local.parsed, "basic", local.parsed.notes, local.parsed.missingInformation);
+      const parsed = local.parsed;
+      const next: RequestFormValues = { ...values, origin: parsed.origin || values.origin, destination: parsed.destination || values.destination, corporateBudget: parsed.corporateBudget ?? values.corporateBudget, currency: parsed.currency ?? values.currency, purpose: parsed.purpose || values.purpose, cabinPreference: parsed.cabinPreference ?? values.cabinPreference, accommodationPreference: parsed.accommodationPreference ?? values.accommodationPreference, interests: parsed.interests?.length ? parsed.interests : values.interests, leisureEnabled: parsed.leisureEnabled ?? values.leisureEnabled };
+      setDraft(next); setAgentResult(null); setProgress([]); setMode("basic"); setNotes(parsed.notes);
+      toast.success("Basic planning mode");
+      return { values: next, result: null, stages: [] };
     }
   }
 
-  function applyInterpretation(
-    values: RequestFormValues,
-    parsed: {
-      origin?: string;
-      destination?: string;
-      corporateBudget?: number;
-      currency?: RequestFormValues["currency"];
-      purpose?: string;
-      cabinPreference?: RequestFormValues["cabinPreference"];
-      accommodationPreference?: RequestFormValues["accommodationPreference"];
-      interests?: string[];
-      quietStay?: boolean;
-      leisureEnabled?: boolean;
-    },
-    nextMode: "basic" | "ai",
-    parsedNotes: string[],
-    missing: string[],
-  ) {
-    const next: RequestFormValues = {
-      ...values,
-      origin: parsed.origin || values.origin,
-      destination: parsed.destination || values.destination,
-      corporateBudget: parsed.corporateBudget ?? values.corporateBudget,
-      currency: parsed.currency ?? values.currency,
-      purpose: parsed.purpose || values.purpose,
-      cabinPreference: parsed.cabinPreference ?? values.cabinPreference,
-      accommodationPreference: parsed.accommodationPreference ?? values.accommodationPreference,
-      interests: parsed.interests && parsed.interests.length > 0 ? parsed.interests : values.interests,
-      leisureEnabled: parsed.leisureEnabled ?? values.leisureEnabled,
-      specialRequirements: parsed.quietStay
-        ? values.specialRequirements.includes("Quiet")
-          ? values.specialRequirements
-          : `${values.specialRequirements} Quiet hotel.`.trim()
-        : values.specialRequirements,
-    };
-    setDraft(next);
-    setMode(nextMode);
-    setNotes([
-      ...(nextMode === "basic" ? ["Basic planning mode. No runtime model key is configured."] : ["Model interpretation applied."]),
-      ...parsedNotes,
-      ...(missing.length ? [`Still missing: ${missing.join(", ")}.`] : []),
-    ]);
-    toast.success(nextMode === "basic" ? "Interpreted in basic planning mode" : "Interpreted with the runtime model");
-  }
-
-  function generate(values: RequestFormValues) {
+  async function generate(values: RequestFormValues) {
     setPlanning(true);
-    setDraft(values);
-    window.setTimeout(() => {
-      const request = requestFromForm(values);
+    const interpreted = values.freeText.trim() && agentResult?.intent.originalMessage !== values.freeText ? await interpret(values) : { values, result: agentResult, stages: progress };
+    const nextValues = interpreted.values;
+    setDraft(nextValues);
+    const stages = interpreted.stages.map((event) => ({ ...event, status: "pending" as const }));
+    setProgress(stages);
+    for (let index = 0; index < stages.length; index += 1) {
+      setProgress((current) => current.map((event, eventIndex) => ({ ...event, status: eventIndex < index ? "completed" : eventIndex === index ? "running" : "pending" })));
+      await new Promise((resolve) => window.setTimeout(resolve, 90));
+    }
+    const request = requestFromForm(nextValues);
       const plan = planTrip({
         request,
         policy: workspaceProfile ? policyForWorkspace(workspaceProfile) : undefined,
-        mode,
+        mode: interpreted.result?.source === "openai" ? "ai" : mode,
         interpretationNotes: notes.length > 0 ? notes : undefined,
       });
       const next = createTripRecord(request, plan, roleLabel(role), nowStamp());
       setRecord(next);
+      setProgress((current) => current.map((event) => ({ ...event, status: "completed" })));
       setPlanning(false);
-      if (plan.status === "ok") toast.success(`${plan.packages.length} feasible package${plan.packages.length === 1 ? "" : "s"} ready`);
+      if (plan.status === "ok") toast.success(agentUiMessages[language].packagesReady);
       else toast.error(plan.status === "NO_FEASIBLE_PLAN" ? "No feasible plan" : "Request needs a correction");
-    }, 200);
+  }
+
+  async function regenerateHotel(pkg: NonNullable<typeof selected>) {
+    if (!record || !pkg.accommodation) return;
+    setRegenerating(true);
+    try {
+      const response = await fetch("/api/agent/regenerate", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ instruction: language === "az" ? "Başqa otel tap." : language === "tr" ? "Başka bir otel bul." : "Find another hotel.", preferredLanguage: language, currentRequest: record.request, selectedPackage: { flightId: pkg.flight.id, hotelId: pkg.accommodation.id }, excludedOptionIds }) });
+      if (!response.ok) throw new Error("regeneration failed");
+      const result = await response.json() as RegenerationResult;
+      setExcludedOptionIds(result.excludedOptionIds);
+      if (result.error || result.eligibleHotelIds.length === 0) { toast.error(agentUiMessages[language].noAlternatives); return; }
+      const hotelIds = new Set(result.eligibleHotelIds); const flightIds = new Set(result.eligibleFlightIds);
+      const catalog = { ...demoCatalog, stays: demoCatalog.stays.filter((stay) => hotelIds.has(stay.id)), flights: flightIds.size ? demoCatalog.flights.filter((flight) => flightIds.has(flight.id)) : demoCatalog.flights };
+      const plan = planTrip({ request: record.request, policy: record.plan.policy, catalog, mode: result.source === "openai" ? "ai" : "basic", interpretationNotes: [...record.plan.interpretationNotes, result.response] });
+      if (plan.status !== "ok" || plan.packages.length === 0) { toast.error(agentUiMessages[language].noAlternatives); return; }
+      const selectedPackageId = plan.packages.find((item) => item.tier === "balanced")?.id ?? plan.packages[0]?.id;
+      setRecord({ ...record, plan, selectedPackageId, audit: [...record.audit, { id: `audit-${Date.now()}`, tripId: record.request.id, type: "hotel regenerated", description: `${pkg.accommodation.name} excluded; planner recalculated ${plan.packages.length} package(s).`, timestamp: nowStamp(), actor: roleLabel(role) }], updatedAt: nowStamp() });
+      setNotes((current) => [...current, result.response]); toast.success(result.response);
+    } catch { toast.error(agentUiMessages[language].noAlternatives); }
+    finally { setRegenerating(false); }
   }
 
   function update(next: TripRecord) {
@@ -296,6 +299,8 @@ export function TripWorkspace() {
                   onLoadDemo={loadScenario}
                   onReset={resetDemo}
                   workspaceKind={workspaceProfile?.kind ?? "business"}
+                  language={language}
+                  onLanguageChange={setLanguage}
                 />
               ) : (
                 <p className="text-sm text-muted-foreground">Restoring the saved demo…</p>
@@ -314,6 +319,7 @@ export function TripWorkspace() {
               {mode === "basic" ? "Basic planning mode" : "Runtime model"}
             </Badge>
           </div>
+          <AgentPanel interpretation={agentResult} progress={progress} language={language} />
           {notes.length > 0 ? (
             <Card>
               <CardHeader>
@@ -343,6 +349,9 @@ export function TripWorkspace() {
               packages={record.plan.packages}
               selectedId={record.selectedPackageId}
               onSelect={(id) => update(selectPackage(record, id, roleLabel(role), nowStamp()))}
+              language={language}
+              onRegenerate={regenerateHotel}
+              regenerating={regenerating}
             />
           ) : null}
           <section id="itinerary" className="scroll-mt-24"><ItineraryTimeline stops={selected?.itinerary ?? []} /></section>
