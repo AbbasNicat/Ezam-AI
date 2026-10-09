@@ -33,6 +33,7 @@ export type TravelIntent = z.infer<typeof travelIntentSchema>;
 export const interpretRequestSchema = z.object({
   message: z.string().trim().min(1).max(4000), preferredLanguage: agentLanguageSchema.optional(),
   savedPreferences: z.record(z.string(), z.unknown()).optional(), companyPolicy: z.record(z.string(), z.unknown()).optional(),
+  referenceTimestamp: z.string().datetime({ offset: true }).optional(), timeZone: z.string().min(1).max(100).optional(),
 });
 
 export const agentInterpretationSchema = z.object({

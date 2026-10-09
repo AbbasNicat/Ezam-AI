@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest";
 import { buildInterpretation, fallbackIntent } from "@/lib/agent/fallback";
-import { interpretAgentRequest } from "@/lib/agent/openai";
+import { interpretAgentRequest, type OpenAiDiagnostic } from "@/lib/agent/openai";
 import { regenerateAlternatives } from "@/lib/agent/regeneration";
 import { planningStages } from "@/lib/agent/progress";
 import { demoRequest } from "@/lib/data/demo-scenario";
@@ -42,4 +42,57 @@ describe("multilingual travel agent", () => {
   it("reports a model-extracted unsupported city", async () => { const r = await interpretAgentRequest({ message:"Trip to Paris." }, { apiKey:"test", fetcher:mockFetch({ ...baseModel, destination:"Paris" }) }); expect(r.source).toBe("openai"); expect(r.warnings[0]).toContain("not available"); });
   it("honors user-selected language over model detection", async () => { const r = await interpretAgentRequest({ message:"Istanbul trip.", preferredLanguage:"az" }, { apiKey:"test", fetcher:mockFetch({ ...baseModel, detectedLanguage:"en", responseLanguage:"en" }) }); expect(r.intent.responseLanguage).toBe("az"); expect(r.response).toMatch(/Səyahət/); });
   it("provides typed business progress stages", () => { const stages = planningStages("tr", true); expect(stages.map((x)=>x.stageId)).toEqual(expect.arrayContaining(["policy","approval","packages"])); expect(stages.find((x)=>x.stageId==="restaurants")?.simulation).toBe(true); });
+
+  it("classifies provider authentication failures without exposing provider content", async () => {
+    const diagnostics: OpenAiDiagnostic[] = [];
+    const r = await interpretAgentRequest({ message:"Baku to Istanbul." }, { apiKey:"test", fetcher:async()=>new Response(JSON.stringify({ error:{ message:"secret detail", code:"invalid_api_key" } }),{status:401}), diagnosticLogger:(item)=>diagnostics.push(item) });
+    expect(r.source).toBe("fallback"); expect(diagnostics).toEqual([expect.objectContaining({code:"OPENAI_AUTH_FAILED",httpStatus:401})]); expect(JSON.stringify(diagnostics)).not.toContain("secret detail");
+  });
+  it("distinguishes rate limits from exhausted quota", async () => {
+    const diagnostics: OpenAiDiagnostic[] = [];
+    await interpretAgentRequest({ message:"Baku to Istanbul." }, { apiKey:"test", fetcher:async()=>new Response(JSON.stringify({error:{code:"insufficient_quota"}}),{status:429}), diagnosticLogger:(item)=>diagnostics.push(item) });
+    expect(diagnostics[0].code).toBe("OPENAI_QUOTA_EXCEEDED");
+  });
+  it("classifies a provider 429 rate limit", async () => {
+    const diagnostics: OpenAiDiagnostic[] = [];
+    await interpretAgentRequest({ message:"Baku to Istanbul." }, { apiKey:"test", fetcher:async()=>new Response(JSON.stringify({error:{code:"rate_limit_exceeded"}}),{status:429}), diagnosticLogger:(item)=>diagnostics.push(item) });
+    expect(diagnostics[0]).toMatchObject({code:"OPENAI_RATE_LIMITED",httpStatus:429});
+  });
+  it("classifies an unavailable model", async () => {
+    const diagnostics: OpenAiDiagnostic[] = [];
+    await interpretAgentRequest({ message:"Baku to Istanbul." }, { apiKey:"test", model:"missing-model", fetcher:async()=>new Response(JSON.stringify({error:{code:"model_not_found"}}),{status:404}), diagnosticLogger:(item)=>diagnostics.push(item) });
+    expect(diagnostics[0]).toMatchObject({code:"OPENAI_MODEL_UNAVAILABLE",model:"missing-model",httpStatus:404});
+  });
+  it("normalizes omitted structural fields without inventing travel facts", async () => {
+    const r = await interpretAgentRequest({ message:"Bakıdan İstanbula 2026-10-20 tarixində gedirəm.", preferredLanguage:"az" }, { apiKey:"test", fetcher:mockFetch({ detectedLanguage:"az", languageConfidence:.98, origin:"Baku", destination:"Istanbul", departureDate:"2026-10-20" }) });
+    expect(r.source).toBe("openai"); expect(r.intent.locationPreferences).toEqual([]); expect(r.intent.returnDate).toBeUndefined(); expect(r.intent.responseLanguage).toBe("az");
+  });
+  it("logs schema issue paths and falls back for invalid scalar fields", async () => {
+    const diagnostics: OpenAiDiagnostic[] = [];
+    const r = await interpretAgentRequest({ message:"Baku to Istanbul." }, { apiKey:"test", fetcher:mockFetch({ ...baseModel, currency:"BTC" }), diagnosticLogger:(item)=>diagnostics.push(item) });
+    expect(r.source).toBe("fallback"); expect(diagnostics[0]).toMatchObject({code:"OPENAI_SCHEMA_VALIDATION_FAILED",validationIssuePaths:["currency"]});
+  });
+  it("classifies invalid and truncated provider JSON", async () => {
+    const diagnostics: OpenAiDiagnostic[] = [];
+    await interpretAgentRequest({ message:"Baku to Istanbul." }, { apiKey:"test", fetcher:async()=>new Response(JSON.stringify({choices:[{finish_reason:"length",message:{content:"{"}}]}),{status:200}), diagnosticLogger:(item)=>diagnostics.push(item) });
+    expect(diagnostics[0].code).toBe("OPENAI_INVALID_JSON");
+  });
+  it("classifies malformed JSON content", async () => {
+    const diagnostics: OpenAiDiagnostic[] = [];
+    await interpretAgentRequest({ message:"Baku to Istanbul." }, { apiKey:"test", fetcher:async()=>new Response(JSON.stringify({choices:[{finish_reason:"stop",message:{content:"not-json"}}]}),{status:200}), diagnosticLogger:(item)=>diagnostics.push(item) });
+    expect(diagnostics[0].code).toBe("OPENAI_INVALID_JSON");
+  });
+  it("classifies provider timeouts after one retry", async () => {
+    const diagnostics: OpenAiDiagnostic[] = [];
+    let calls=0; await interpretAgentRequest({ message:"Baku to Istanbul." }, { apiKey:"test", fetcher:async()=>{calls+=1;throw new DOMException("timeout","AbortError")}, diagnosticLogger:(item)=>diagnostics.push(item) });
+    expect(calls).toBe(2); expect(diagnostics[0]).toMatchObject({code:"OPENAI_TIMEOUT",retryCount:1});
+  });
+  it("resolves Azerbaijani tomorrow only with an explicit reference timestamp and timezone", () => {
+    const intent = fallbackIntent("Sabah Bakıdan İstanbula getmək istəyirəm. Dörd gün qalacağam.", "az", { referenceTimestamp:"2026-10-09T16:30:00Z", timeZone:"Asia/Baku" });
+    expect(intent.departureDate).toBe("2026-10-10"); expect(intent.durationDays).toBe(4); expect(intent.returnDate).toBeUndefined();
+  });
+  it("preserves an exact relative departure time as a planner limitation", () => {
+    const intent = fallbackIntent("3 saat sonra Bakıdan İstanbula uçmaq istəyirəm.", "az", { referenceTimestamp:"2026-10-09T16:30:00Z", timeZone:"Asia/Baku" });
+    expect(intent.hardConstraints).toContainEqual(expect.objectContaining({field:"departureDateTime",value:"2026-10-09T19:30:00.000Z"})); expect(intent.departureDate).toBe("2026-10-09");
+  });
 });

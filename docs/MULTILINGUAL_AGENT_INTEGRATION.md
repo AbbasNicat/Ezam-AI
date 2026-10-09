@@ -23,6 +23,8 @@ const response = await fetch("/api/agent/interpret", {
   body: JSON.stringify({
     message: "Başqa otel deyil, İstanbulda sakit və mərkəzə yaxın otel istəyirəm.",
     preferredLanguage: "az", // optional; overrides detection
+    referenceTimestamp: new Date().toISOString(), // required for relative dates
+    timeZone: "Asia/Baku", // explicit IANA timezone; never inferred
     savedPreferences,
     companyPolicy,
   }),
@@ -31,6 +33,8 @@ const result: AgentInterpretation & { progress: AgentProgressEvent[] } = await r
 ```
 
 Bind `result.plannerInput` into existing request form values, but do not invent absent required fields. Render `clarificationQuestions` before planning. `warnings` communicates unsupported demo inventory and unverified Michelin preferences. `source` is diagnostic metadata.
+
+Relative phrases such as `sabah`/`tomorrow` are resolved only when both `referenceTimestamp` and an explicit IANA `timeZone` are supplied. A duration remains separate from the return date. Exact relative times are preserved as a `departureDateTime` constraint because the current planner only schedules by calendar date.
 
 ## Regenerate with exclusion memory
 
@@ -67,6 +71,7 @@ Frontend animations may transition each stage through `pending`, `running`, `com
 - The in-memory limiter allows 12 agent calls per source address per minute. For multi-instance production, replace it with a shared Vercel KV/Upstash limiter.
 - OpenAI calls time out after 8 seconds, retry once, use JSON mode, and cap output at 900 tokens.
 - No API key or raw provider error is returned or logged.
+- Provider failures emit sanitized server logs with an internal category, HTTP status when available, model name, duration, retry count, and schema issue paths. Prompts, traveler text, authorization headers, and provider error messages are never logged.
 
 ## Known limitations
 

@@ -21,12 +21,32 @@ function cityMentions(text: string): string[] {
 }
 function numberBefore(text: string, word: RegExp): number | undefined { const m = text.match(new RegExp(`(\\d+)\\s*(?:${word.source})`, "i")); return m ? Number(m[1]) : undefined; }
 
-export function fallbackIntent(message: string, preferredLanguage?: AgentLanguage): TravelIntent {
+function wordDuration(text: string): number | undefined {
+  const normalized = text.toLocaleLowerCase("tr");
+  const words: Array<[RegExp, number]> = [[/\b(?:bir|one)\b/, 1], [/\b(?:iki|two)\b/, 2], [/\b(?:üç|uc|three)\b/, 3], [/\b(?:dörd|dort|four)\b/, 4], [/\b(?:beş|bes|five)\b/, 5], [/\b(?:altı|alti|six)\b/, 6], [/\b(?:yeddi|yedi|seven)\b/, 7]];
+  return words.find(([word]) => word.test(normalized) && /gün|gun|days?/.test(normalized))?.[1];
+}
+
+function zonedCalendarDate(timestamp: string, timeZone: string): string | undefined {
+  try {
+    const parts = new Intl.DateTimeFormat("en-CA", { timeZone, year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(new Date(timestamp));
+    const value = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+    return `${value.year}-${value.month}-${value.day}`;
+  } catch { return undefined; }
+}
+
+function addCalendarDays(date: string, days: number): string {
+  const value = new Date(`${date}T12:00:00Z`);
+  value.setUTCDate(value.getUTCDate() + days);
+  return value.toISOString().slice(0, 10);
+}
+
+export function fallbackIntent(message: string, preferredLanguage?: AgentLanguage, context: { referenceTimestamp?: string; timeZone?: string } = {}): TravelIntent {
   const { language, confidence } = detectLanguage(message, preferredLanguage);
   const cities = cityMentions(message);
   const budget = message.match(/(\d+(?:[.,]\d+)?)\s*(AZN|USD|EUR|TRY|GEL|AED)/i);
   const isoDates = message.match(/\b20\d{2}-\d{2}-\d{2}\b/g) ?? [];
-  const durationDays = numberBefore(message, /days?|gün|gun|günlük|gunluk/);
+  const durationDays = numberBefore(message, /days?|gün|gun|günlük|gunluk/) ?? wordDuration(message);
   const hotelStars = Number(message.match(/([1-5])\s*(?:star|stars|ulduz|ulduzlu|yıldız|yıldızlı)/i)?.[1] ?? 0) || undefined;
   const strictBudget = /do not exceed|must not exceed|maximum|max\.?|keçməsin|cox olmasin|çok olmasın|aşmasın/i.test(message);
   const strictHotel = /must be|yalnız|mutləq|mütləq|olmalı|olmasi gerek|olması gerek/i.test(message);
@@ -40,12 +60,17 @@ export function fallbackIntent(message: string, preferredLanguage?: AgentLanguag
   const attractions = [nearAttractions ? "major attractions" : "", /museum|muzey|müze/i.test(message) ? "museums" : "", /architecture|memarlıq|mimari/i.test(message) ? "architecture" : ""].filter(Boolean);
   const locations = [nearAttractions ? "near major attractions" : "", nearCenter ? "city center" : "", quiet ? "quiet neighborhood" : "", /near.*airport|havaalanına yakın|hava limanına yaxın/i.test(message) ? "near airport" : ""].filter(Boolean);
   const hardConstraints: TravelIntent["hardConstraints"] = [];
+  const referenceDate = context.referenceTimestamp && context.timeZone ? zonedCalendarDate(context.referenceTimestamp, context.timeZone) : undefined;
+  const relativeTomorrow = /\b(?:sabah|yarın|yarin|tomorrow)\b/i.test(message);
+  const hoursLater = message.match(/(\d+)\s*(?:saat|hours?)\s*(?:sonra|later)/i);
+  const relativeDepartureDate = referenceDate && relativeTomorrow ? addCalendarDays(referenceDate, 1) : referenceDate && hoursLater && context.referenceTimestamp ? zonedCalendarDate(new Date(new Date(context.referenceTimestamp).getTime() + Number(hoursLater[1]) * 3_600_000).toISOString(), context.timeZone!) : undefined;
+  if (hoursLater && context.referenceTimestamp && context.timeZone) hardConstraints.push({ field: "departureDateTime", operator: "equals", value: new Date(new Date(context.referenceTimestamp).getTime() + Number(hoursLater[1]) * 3_600_000).toISOString(), reason: `Exact departure time interpreted in ${context.timeZone}; the current planner uses calendar dates only.` });
   if (strictBudget && budget) hardConstraints.push({ field: "totalBudget", operator: "maximum", value: Number(budget[1].replace(",", ".")), reason: "The user explicitly set a maximum." });
   if (hotelStars && strictHotel) hardConstraints.push({ field: "hotelStars", operator: "equals", value: hotelStars, reason: "The user explicitly required this hotel category." });
   if (direct) hardConstraints.push({ field: "flightStops", operator: "maximum", value: 0, reason: "The user requires direct flights." });
   return {
     originalMessage: message, detectedLanguage: language, responseLanguage: preferredLanguage ?? language, languageConfidence: confidence,
-    origin, destination, departureDate: isoDates[0], returnDate: isoDates[1], durationDays, travelerCount: numberBefore(message, /travelers?|people|nəfər|nefer|kişi|kisi/),
+    origin, destination, departureDate: isoDates[0] ?? relativeDepartureDate, returnDate: isoDates[1], durationDays, travelerCount: numberBefore(message, /travelers?|people|nəfər|nefer|kişi|kisi/),
     totalBudget: budget ? Number(budget[1].replace(",", ".")) : undefined, currency: budget?.[2]?.toUpperCase() as TravelIntent["currency"],
     purpose: /meeting|görüş|gorus|toplantı|toplanti/i.test(message) ? "Business meeting" : undefined,
     travelStyle: /luxury|lüks|premium|beşulduz|5\s*(?:star|ulduz|yıldız)/i.test(message) ? "luxury" : undefined,
