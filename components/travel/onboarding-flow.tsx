@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, type FormEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Building2, Check, UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -53,7 +53,13 @@ export function OnboardingFlow() {
         };
     clearDemo();
     saveWorkspaceProfile(profile);
-    router.push(`/demo?workspace=${mode}`);
+    router.push(mode === "personal" ? "/individual/plan" : "/business");
+  }
+
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!event.currentTarget.reportValidity()) return;
+    submit(new FormData(event.currentTarget));
   }
 
   return (
@@ -78,7 +84,7 @@ export function OnboardingFlow() {
           </button>
         </div>
 
-        <form action={submit} className="rounded-2xl border border-border bg-card p-5 shadow-sm sm:p-7">
+        <form onSubmit={handleSubmit} className="rounded-2xl border border-border bg-card p-5 shadow-sm sm:p-7">
           {mode === "personal" ? (
             <div className="grid gap-4 sm:grid-cols-2">
               <Field label="Full name"><Input name="fullName" required placeholder="Aylin M." /></Field>

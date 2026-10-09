@@ -1,23 +1,23 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f4f7fb;
-  --foreground: #0b1f3a;
+  --background: #f5f6f3;
+  --foreground: #151a1d;
   --card: #ffffff;
   --card-foreground: #0b1f3a;
-  --primary: #0f766e;
+  --primary: #246b64;
   --primary-foreground: #ffffff;
-  --secondary: #e7eef6;
-  --secondary-foreground: #0b1f3a;
-  --muted: #eef3f8;
-  --muted-foreground: #52627a;
-  --accent: #e6f6f3;
-  --accent-foreground: #0b1f3a;
+  --secondary: #e9ece8;
+  --secondary-foreground: #151a1d;
+  --muted: #eef0ed;
+  --muted-foreground: #68716f;
+  --accent: #e4f1ee;
+  --accent-foreground: #184f49;
   --destructive: #b42318;
-  --border: #d5e0ec;
-  --input: #d5e0ec;
-  --ring: #0f766e;
-  --radius: 0.8rem;
+  --border: #dde1dc;
+  --input: #cfd5cf;
+  --ring: #246b64;
+  --radius: 0.75rem;
 }
 
 @theme inline {
@@ -47,6 +47,10 @@ body {
   color: var(--foreground);
   font-family: var(--font-sans), sans-serif;
 }
+
+::selection { background: #cce5df; color: #151a1d; }
+
+button, a { -webkit-tap-highlight-color: transparent; }
 
 .leaflet-container {
   height: 360px;

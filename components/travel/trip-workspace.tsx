@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { toast } from "sonner";
 import { AuditTimeline } from "@/components/travel/audit-timeline";
 import { ApprovalPanel } from "@/components/travel/approval-panel";
@@ -13,6 +13,7 @@ import { PackageComparison } from "@/components/travel/package-comparison";
 import { PolicyResults } from "@/components/travel/policy-results";
 import { TravelMap, type MapMarker } from "@/components/travel/travel-map";
 import { TravelRequestForm } from "@/components/travel/travel-request-form";
+import { WorkspaceNav } from "@/components/travel/workspace-nav";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -69,6 +70,7 @@ function markersFor(stops: ItineraryStop[]): MapMarker[] {
 }
 
 export function TripWorkspace() {
+  const pathname = usePathname();
   const [ready, setReady] = useState(false);
   const [role, setRole] = useState<DemoRole>("employee");
   const [draft, setDraft] = useState<RequestFormValues>(emptyFormValues);
@@ -117,6 +119,18 @@ export function TripWorkspace() {
     if (!ready) return;
     saveDemo({ role, draft, record, interpretationNotes: notes });
   }, [ready, role, draft, record, notes]);
+
+  useEffect(() => {
+    if (!ready) return;
+    const section = pathname.endsWith("/approvals") || pathname.endsWith("/expenses") || pathname.endsWith("/policies")
+      ? "operations"
+      : pathname.endsWith("/requests") || pathname.endsWith("/plan")
+        ? "request"
+        : pathname.endsWith("/trips")
+          ? "plans"
+          : null;
+    if (section) window.requestAnimationFrame(() => document.getElementById(section)?.scrollIntoView({ behavior: "smooth", block: "start" }));
+  }, [pathname, ready]);
 
   const selected = record ? selectedOrFirst(record.plan, record.selectedPackageId) : undefined;
   const mapMarkers = useMemo(() => markersFor(selected?.itinerary ?? []), [selected]);
@@ -242,12 +256,14 @@ export function TripWorkspace() {
   }
 
   return (
-    <div className="min-h-screen">
-      <header className="border-b border-border bg-card">
-        <div className="mx-auto flex max-w-[1440px] flex-wrap items-center justify-between gap-3 px-4 py-3">
+    <div className="min-h-screen lg:flex">
+      <WorkspaceNav profile={workspaceProfile} />
+      <div className="min-w-0 flex-1">
+      <header className="sticky top-0 z-20 border-b border-border bg-card/90 backdrop-blur-xl">
+        <div className="flex min-h-16 flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6">
           <div>
-            <Link href="/" className="text-sm font-semibold text-primary">AtlasFlow AI</Link>
-            <p className="text-xs text-muted-foreground">{workspaceProfile?.kind === "personal" ? "Personal planning workspace" : "Business demo simulation — not production authentication"}</p>
+            <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-primary">Travel operations</p>
+            <h1 className="text-base font-semibold tracking-tight">{workspaceProfile?.kind === "personal" ? "Plan your next trip" : "Trip planning workspace"}</h1>
           </div>
           <div className="flex flex-wrap gap-2">
             {workspaceProfile ? <Badge variant="secondary">{workspaceProfile.kind === "personal" ? "Individual" : workspaceProfile.companyName}</Badge> : null}
@@ -263,8 +279,8 @@ export function TripWorkspace() {
           </div>
         </div>
       </header>
-      <div className="mx-auto grid max-w-[1440px] gap-4 px-4 py-4 lg:grid-cols-[340px_minmax(0,1fr)_320px]">
-        <aside className="space-y-3">
+      <div className="grid gap-4 px-4 py-5 sm:px-6 xl:grid-cols-[320px_minmax(0,1fr)_300px]">
+        <aside id="request" className="scroll-mt-24 space-y-3">
           <Card>
             <CardHeader>
               <CardTitle>Travel request</CardTitle>
@@ -287,7 +303,7 @@ export function TripWorkspace() {
             </CardContent>
           </Card>
         </aside>
-        <main className="trip-main min-w-0 space-y-4">
+        <main id="plans" className="trip-main min-w-0 scroll-mt-24 space-y-4">
           <div className="flex flex-wrap items-center gap-2 text-xs">
             {["Request", "Analyze", "Packages", "Itinerary", "Approve", "Report"].map((step, index) => (
               <span key={step} className="rounded-full bg-card px-3 py-1 ring-1 ring-border">
@@ -329,8 +345,8 @@ export function TripWorkspace() {
               onSelect={(id) => update(selectPackage(record, id, roleLabel(role), nowStamp()))}
             />
           ) : null}
-          <ItineraryTimeline stops={selected?.itinerary ?? []} />
-          <Card>
+          <section id="itinerary" className="scroll-mt-24"><ItineraryTimeline stops={selected?.itinerary ?? []} /></section>
+          <Card id="map" className="scroll-mt-24">
             <CardHeader>
               <CardTitle>Map</CardTitle>
               <p className="text-sm text-muted-foreground">
@@ -342,7 +358,7 @@ export function TripWorkspace() {
             </CardContent>
           </Card>
         </main>
-        <aside className="space-y-3">
+        <aside id="operations" className="scroll-mt-24 space-y-3">
           <BudgetBreakdown pkg={selected} budget={record?.request.corporateBudget ?? draft.corporateBudget} />
           {workspaceProfile?.kind !== "personal" ? <PolicyResults plan={record?.plan ?? null} pkg={selected} /> : null}
           {record ? (
@@ -366,6 +382,7 @@ export function TripWorkspace() {
             </>
           ) : null}
         </aside>
+      </div>
       </div>
     </div>
   );
