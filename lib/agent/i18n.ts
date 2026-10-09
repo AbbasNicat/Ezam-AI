@@ -1,0 +1,10 @@
+import type { AgentLanguage } from "@/lib/agent/schemas";
+
+const messages = {
+  en: { ready: "Your travel request is structured and ready for planning.", clarifyDestination: "Which city would you like to visit?", clarifyDates: "What are your departure and return dates?", clarifyOrigin: "Which city will you depart from?", unsupported: "The requested destination is not available in the current demo catalog.", michelin: "Michelin recognition cannot be confirmed from the current demo catalog.", alternative: "I excluded the rejected option and prepared eligible alternatives.", noAlternative: "No unused alternative matches the current constraints. Change a constraint or reset exclusions." },
+  az: { ready: "Səyahət istəyiniz strukturlaşdırılıb və planlama üçün hazırdır.", clarifyDestination: "Hansı şəhərə səyahət etmək istəyirsiniz?", clarifyDates: "Gediş və dönüş tarixləriniz hansılardır?", clarifyOrigin: "Hansı şəhərdən yola düşəcəksiniz?", unsupported: "İstədiyiniz istiqamət hazırkı demo kataloqunda mövcud deyil.", michelin: "Hazırkı demo kataloqu Michelin statusunu təsdiqləmir.", alternative: "Bəyənmədiyiniz seçimi istisna etdim və uyğun alternativləri hazırladım.", noAlternative: "Cari şərtlərə uyğun istifadə olunmamış alternativ yoxdur. Şərti dəyişin və ya istisnaları sıfırlayın." },
+  tr: { ready: "Seyahat isteğiniz yapılandırıldı ve planlamaya hazır.", clarifyDestination: "Hangi şehre seyahat etmek istiyorsunuz?", clarifyDates: "Gidiş ve dönüş tarihleriniz nedir?", clarifyOrigin: "Hangi şehirden hareket edeceksiniz?", unsupported: "İstediğiniz destinasyon mevcut demo kataloğunda bulunmuyor.", michelin: "Mevcut demo kataloğu Michelin statüsünü doğrulayamıyor.", alternative: "Reddettiğiniz seçeneği hariç tuttum ve uygun alternatifleri hazırladım.", noAlternative: "Mevcut koşullara uyan kullanılmamış alternatif yok. Bir koşulu değiştirin veya hariç tutulanları sıfırlayın." },
+} as const;
+export type MessageKey = keyof typeof messages.en;
+export function t(language: AgentLanguage, key: MessageKey): string { return messages[language][key]; }
+export const agentMessages = messages;
