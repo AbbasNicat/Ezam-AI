@@ -57,6 +57,25 @@
   --color-af-success-soft: #e9f4ee;
   --shadow-af-float: 0 1px 2px rgb(21 26 29 / 0.04), 0 8px 24px -8px rgb(21 26 29 / 0.1);
   --shadow-af-lift: 0 1px 2px rgb(21 26 29 / 0.04), 0 16px 40px -16px rgb(21 26 29 / 0.16);
+
+  /* Exact aliases used by the original Figma export. */
+  --color-canvas: #fafaf8;
+  --color-subtle: #f5f6f4;
+  --color-surface: #ffffff;
+  --color-line: #e8eae7;
+  --color-line-strong: #dcdfdb;
+  --color-ink: #151a1d;
+  --color-ink-2: #687078;
+  --color-ink-3: #949b9f;
+  --color-success: #22845d;
+  --color-success-soft: #e9f4ee;
+  --color-warning: #c58a32;
+  --color-warning-soft: #f8f0e3;
+  --color-error: #c85b53;
+  --color-error-soft: #f9ebe9;
+  --color-info: #477ba8;
+  --color-info-soft: #eaf1f7;
+  --color-ochre: #8a6a3b;
 }
 
 @keyframes af-flow {
@@ -77,10 +96,18 @@
 }
 
 body {
-  background: var(--background);
+  background: #fafaf8;
   color: var(--foreground);
   font-family: var(--font-sans), sans-serif;
 }
+
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+
+.animate-fade-up { animation: fade-up 320ms cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+.tabular { font-variant-numeric: tabular-nums; }
 
 ::selection { background: #cce5df; color: #151a1d; }
 
