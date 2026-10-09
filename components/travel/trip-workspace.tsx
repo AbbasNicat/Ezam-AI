@@ -16,7 +16,6 @@ import { TravelRequestForm } from "@/components/travel/travel-request-form";
 import { AgentPanel } from "@/components/travel/agent-panel";
 import { WorkspaceNav } from "@/components/travel/workspace-nav";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { demoFormValues, emptyFormValues, type RequestFormValues } from "@/lib/data/demo-scenario";
 import { demoCatalog } from "@/lib/data/catalog";
@@ -258,141 +257,54 @@ export function TripWorkspace() {
     setRecord(next);
   }
 
+  const requestRoute = pathname.endsWith("/plan") || pathname.endsWith("/requests") || pathname === "/demo";
+  const requestView = requestRoute && !record;
+  const approvalsView = pathname.endsWith("/approvals");
+  const expensesView = pathname.endsWith("/expenses");
+  const title = requestView ? "Where are we taking you?" : approvalsView ? "Approvals" : expensesView ? "Expenses & reports" : "Your travel plan";
+  const subtitle = requestView
+    ? "Tell AtlasFlow about your trip. We’ll handle the planning."
+    : approvalsView
+      ? "Review policy, cost, and the complete decision history."
+      : expensesView
+        ? "Corporate and personal costs stay clearly separated."
+        : "Compare packages, explore the itinerary, and continue to providers.";
+
   return (
-    <div className="min-h-screen bg-af-canvas text-af-ink lg:flex">
+    <div className="min-h-screen bg-canvas text-ink lg:flex">
       <WorkspaceNav profile={workspaceProfile} />
       <div className="min-w-0 flex-1">
-      <header className="sticky top-0 z-20 border-b border-border bg-card/90 backdrop-blur-xl">
-        <div className="flex min-h-16 flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6">
-          <div>
-            <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-af-accent">Travel operations</p>
-            <h1 className="text-[22px] font-medium tracking-[-0.03em]">{pathname.endsWith("/plan") || pathname.endsWith("/requests") ? "Where are we taking you?" : pathname.endsWith("/trips") ? "Your trips" : pathname.endsWith("/approvals") ? "Approvals" : pathname.endsWith("/expenses") ? "Expenses" : "Trip planning workspace"}</h1>
+        <header className="sticky top-0 z-20 border-b border-line bg-canvas/90 backdrop-blur-xl">
+          <div className="mx-auto flex min-h-14 max-w-[1240px] flex-wrap items-center justify-between gap-3 px-5 py-2 md:px-8">
+            <div className="flex items-center gap-2 text-[12px] text-ink-3"><span>{workspaceProfile?.kind === "business" ? workspaceProfile.companyName : "Personal"}</span><span>/</span><span className="text-ink">{title}</span></div>
+            {workspaceProfile?.kind !== "personal" && <div className="flex rounded-[9px] bg-subtle p-1">{ROLES.map(item => <button key={item} onClick={() => setRole(item)} className={`rounded-[7px] px-3 py-1.5 text-[11.5px] transition ${role === item ? "bg-surface font-medium text-ink shadow-sm" : "text-ink-3"}`}>{roleLabel(item)}</button>)}</div>}
           </div>
-          <div className="flex flex-wrap gap-2">
-            {workspaceProfile ? <Badge variant="secondary">{workspaceProfile.kind === "personal" ? "Individual" : workspaceProfile.companyName}</Badge> : null}
-            {workspaceProfile?.kind !== "personal" ? (
-              <>
-            {ROLES.map((item) => (
-              <Button key={item} type="button" size="sm" variant={role === item ? "default" : "outline"} onClick={() => setRole(item)}>
-                {roleLabel(item)}
-              </Button>
-            ))}
-              </>
-            ) : null}
-          </div>
-        </div>
-      </header>
-      <div className="grid gap-4 px-4 py-5 sm:px-6 xl:grid-cols-[320px_minmax(0,1fr)_300px]">
-        <aside id="request" className="scroll-mt-24 space-y-3">
-          <Card>
-            <CardHeader>
-              <CardTitle>Travel request</CardTitle>
-              <p className="text-sm text-muted-foreground">Baku → Istanbul is one click. Edit anything before planning.</p>
-            </CardHeader>
-            <CardContent>
-              {ready ? (
-                <TravelRequestForm
-                  values={draft}
-                  planning={planning}
-                  onSubmit={generate}
-                  onInterpret={interpret}
-                  onLoadDemo={loadScenario}
-                  onReset={resetDemo}
-                  workspaceKind={workspaceProfile?.kind ?? "business"}
-                  language={language}
-                  onLanguageChange={setLanguage}
-                />
-              ) : (
-                <p className="text-sm text-muted-foreground">Restoring the saved demo…</p>
-              )}
-            </CardContent>
-          </Card>
-        </aside>
-        <main id="plans" className="trip-main min-w-0 scroll-mt-24 space-y-4">
-          <div className="flex flex-wrap items-center gap-2 text-xs">
-            {["Request", "Analyze", "Packages", "Itinerary", "Approve", "Report"].map((step, index) => (
-              <span key={step} className="rounded-full bg-card px-3 py-1 ring-1 ring-border">
-                {index + 1}. {step}
-              </span>
-            ))}
-            <Badge variant={mode === "basic" ? "secondary" : "default"}>
-              {mode === "basic" ? "Basic planning mode" : "Runtime model"}
-            </Badge>
-          </div>
-          <AgentPanel interpretation={agentResult} progress={progress} language={language} />
-          {notes.length > 0 ? (
-            <Card>
-              <CardHeader>
-                <CardTitle>Structured brief</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-1 text-sm text-muted-foreground">
-                {notes.map((note) => (
-                  <p key={note}>{note}</p>
-                ))}
-              </CardContent>
-            </Card>
-          ) : null}
-          {!record ? (
-            <Card>
-              <CardHeader>
-                <CardTitle>No plan yet</CardTitle>
-              </CardHeader>
-              <CardContent className="text-sm text-muted-foreground">
-                {workspaceProfile?.kind === "personal"
-                  ? "Review your saved preferences or load the Istanbul scenario, then generate three travel packages. AtlasFlow reports when no feasible plan fits the budget."
-                  : "Load the Caspian Ventures scenario and choose Generate Travel Plans. If nothing fits policy, AtlasFlow returns NO_FEASIBLE_PLAN and a fix instead of a fake compliant package."}
-              </CardContent>
-            </Card>
-          ) : null}
-          {record && record.plan.packages.length > 0 ? (
-            <PackageComparison
-              packages={record.plan.packages}
-              selectedId={record.selectedPackageId}
-              onSelect={(id) => update(selectPackage(record, id, roleLabel(role), nowStamp()))}
-              language={language}
-              onRegenerate={regenerateHotel}
-              regenerating={regenerating}
-            />
-          ) : null}
-          <section id="itinerary" className="scroll-mt-24"><ItineraryTimeline stops={selected?.itinerary ?? []} /></section>
-          <Card id="map" className="scroll-mt-24">
-            <CardHeader>
-              <CardTitle>Map</CardTitle>
-              <p className="text-sm text-muted-foreground">
-                OpenStreetMap markers for this itinerary. Connecting stops is not a measured driving route.
-              </p>
-            </CardHeader>
-            <CardContent>
-              <TravelMap markers={mapMarkers} />
-            </CardContent>
-          </Card>
+        </header>
+        <main className="trip-main mx-auto max-w-[1180px] px-5 pb-24 pt-10 md:px-8 md:pt-12">
+          <div className="flex flex-wrap items-start justify-between gap-4"><div><h1 className="text-[28px] font-medium tracking-[-0.035em] md:text-[32px]">{title}</h1><p className="mt-1 text-[14px] text-ink-2">{subtitle}</p></div><Badge variant={mode === "basic" ? "secondary" : "default"}>{mode === "basic" ? "Basic planning mode" : "Runtime model"}</Badge></div>
+
+          {requestView ? <div className="mt-8 grid gap-6 lg:grid-cols-12">
+            <Card className="overflow-hidden rounded-[14px] border-line bg-surface shadow-none lg:col-span-8">{ready ? <TravelRequestForm values={draft} planning={planning} onSubmit={generate} onInterpret={interpret} onLoadDemo={loadScenario} onReset={resetDemo} workspaceKind={workspaceProfile?.kind ?? "business"} language={language} onLanguageChange={setLanguage}/> : <div className="p-6 text-sm text-ink-2">Restoring the saved demo…</div>}</Card>
+            <aside className="space-y-6 lg:col-span-4">
+              <AgentPanel interpretation={agentResult} progress={progress} language={language}/>
+              <Card className="rounded-[14px] border-line p-6 shadow-none"><h2 className="text-[15px] font-medium">{workspaceProfile?.kind === "personal" ? "Your travel preferences" : "Your company travel policy"}</h2><p className="mt-1 text-[12px] text-ink-3">Applied to every generated package</p><div className="mt-5"><PolicyResults plan={null} pkg={undefined}/></div></Card>
+              {notes.length > 0 && <Card className="rounded-[14px] border-line p-6 shadow-none"><h2 className="text-[15px] font-medium">Structured brief</h2><div className="mt-3 space-y-2 text-[12.5px] leading-relaxed text-ink-2">{notes.map(note=><p key={note}>{note}</p>)}</div></Card>}
+            </aside>
+          </div> : null}
+
+          {!requestView && !approvalsView && !expensesView && <div className="mt-8 space-y-6">
+            {record?.plan.packages.length ? <PackageComparison packages={record.plan.packages} selectedId={record.selectedPackageId} onSelect={id => update(selectPackage(record,id,roleLabel(role),nowStamp()))} language={language} onRegenerate={regenerateHotel} regenerating={regenerating}/> : <EmptyPlan />}
+            <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]"><div className="space-y-6"><ItineraryTimeline stops={selected?.itinerary ?? []}/><Card className="overflow-hidden rounded-[14px] border-line shadow-none"><CardHeader><CardTitle>Trip map</CardTitle><p className="text-[12.5px] text-ink-3">OpenStreetMap itinerary markers · lines are illustrative, not verified routes.</p></CardHeader><CardContent><TravelMap markers={mapMarkers}/></CardContent></Card></div><aside className="space-y-4"><BudgetBreakdown pkg={selected} budget={record?.request.corporateBudget ?? draft.corporateBudget}/>{workspaceProfile?.kind !== "personal" && <PolicyResults plan={record?.plan ?? null} pkg={selected}/>} {record && <BookingHandoff record={record} pkg={selected} onOpen={target=>update(openHandoff(record,target,roleLabel(role),nowStamp()))} onStatus={(target,status)=>update(setHandoffStatus(record,target,status,roleLabel(role),nowStamp()))}/>} {workspaceProfile?.kind !== "personal" && <ApprovalPanel record={record} role={role} onSubmit={()=>record&&update(submitForApproval(record,roleLabel(role),nowStamp()))} onDecide={(status,comment)=>record&&update(decideApproval(record,status,comment,roleLabel(role),nowStamp()))}/>}</aside></div>
+          </div>}
+
+          {approvalsView && <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]"><div className="space-y-5"><ApprovalPanel record={record} role={role} onSubmit={()=>record&&update(submitForApproval(record,roleLabel(role),nowStamp()))} onDecide={(status,comment)=>record&&update(decideApproval(record,status,comment,roleLabel(role),nowStamp()))}/><AuditTimeline events={record?.audit ?? []}/></div><aside className="space-y-4"><BudgetBreakdown pkg={selected} budget={record?.request.corporateBudget ?? draft.corporateBudget}/><PolicyResults plan={record?.plan ?? null} pkg={selected}/></aside></div>}
+          {expensesView && <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]"><FinanceReport record={record}/><aside className="space-y-4"><BudgetBreakdown pkg={selected} budget={record?.request.corporateBudget ?? draft.corporateBudget}/><AuditTimeline events={record?.audit ?? []}/></aside></div>}
         </main>
-        <aside id="operations" className="scroll-mt-24 space-y-3">
-          <BudgetBreakdown pkg={selected} budget={record?.request.corporateBudget ?? draft.corporateBudget} />
-          {workspaceProfile?.kind !== "personal" ? <PolicyResults plan={record?.plan ?? null} pkg={selected} /> : null}
-          {record ? (
-            <BookingHandoff
-              record={record}
-              pkg={selected}
-              onOpen={(target) => update(openHandoff(record, target, roleLabel(role), nowStamp()))}
-              onStatus={(target, status) => update(setHandoffStatus(record, target, status, roleLabel(role), nowStamp()))}
-            />
-          ) : null}
-          {workspaceProfile?.kind !== "personal" ? (
-            <>
-              <ApprovalPanel
-                record={record}
-                role={role}
-                onSubmit={() => record && update(submitForApproval(record, roleLabel(role), nowStamp()))}
-                onDecide={(status, comment) => record && update(decideApproval(record, status, comment, roleLabel(role), nowStamp()))}
-              />
-              <FinanceReport record={record} />
-              <AuditTimeline events={record?.audit ?? []} />
-            </>
-          ) : null}
-        </aside>
-      </div>
       </div>
     </div>
   );
+}
+
+function EmptyPlan() {
+  return <Card className="rounded-[14px] border-line p-10 text-center shadow-none"><CardTitle>No travel plan yet</CardTitle><p className="mx-auto mt-2 max-w-lg text-[13px] text-ink-2">Create a request first. AtlasFlow will show only feasible packages and will return an actionable no-plan result instead of fabricating a compliant option.</p></Card>;
 }
